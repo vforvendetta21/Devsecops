@@ -1,42 +1,95 @@
 pipeline {
-    agent any   // Utilise l’agent maître (pas besoin de label 'docker' pour l'instant)
-    
-    environment {
-        NODE_ENV = "development"
+  agent { label 'docker' }
+  environment {
+    IMAGE = "vuln-app:${env.BUILD_NUMBER}"
+  }
+  stages {
+    stage('Checkout') {
+      steps { checkout scm }
     }
 
-    stages {
-        stage('Install Dependencies') {
-            steps {
-                // Installe les dépendances npm
-                sh 'cd app && npm install'
-            }
-        }
-
-        stage('Run App (test)') {
-            steps {
-                // Lance l’application pour vérifier qu’elle démarre
-                sh 'cd app && node app.js & sleep 5'  // Lancement rapide pour test
-            }
-        }
-
-        stage('SAST Scan') {
-            steps {
-                // Exemple de scan Semgrep simple
-                sh 'cd app && semgrep --config=../semgrep.yml'
-            }
-        }
-
-        stage('Finish') {
-            steps {
-                echo 'Pipeline minimal terminé ✅'
-            }
-        }
+    stage('Build') {
+      steps {
+        sh 'cd app && npm ci'
+      }
     }
 
-    post {
-        always {
-            echo 'Build terminé, succès ou échec.'
-        }
+    stage('SAST: ESLint + Semgrep') {
+      steps {
+        sh '''
+          cd app
+          npx eslint . || true
+          semgrep --config ../semgrep.yml --json --output semgrep-report.json || true
+        '''
+        archiveArtifacts artifacts: 'app/semgrep-report.json', allowEmptyArchive: true
+      }
     }
+
+    stage('SCA: npm audit & Trivy (dependencies)') {
+      steps {
+        sh '''
+          cd app
+          npm audit --json > npm-audit.json || true
+          trivy fs --quiet --format json -o trivy-deps.json .
+        '''
+        archiveArtifacts artifacts: 'app/npm-audit.json, trivy-deps.json', allowEmptyArchive: true
+      }
+    }
+
+    stage('Docker Build + Scan') {
+      steps {
+        sh '''
+          docker build -t ${IMAGE} .
+          trivy image --format json -o trivy-image.json ${IMAGE} || true
+        '''
+        archiveArtifacts artifacts: 'trivy-image.json', allowEmptyArchive: true
+      }
+    }
+
+    stage('DAST: OWASP ZAP baseline') {
+      steps {
+        sh '''
+          docker run -d --name vuln-app-test -p 3000:3000 ${IMAGE}
+          docker run --rm --network host owasp/zap2docker-stable zap-baseline.py -t http://host.docker.internal:3000 -r zap-report.html || true
+          docker rm -f vuln-app-test || true
+        '''
+        archiveArtifacts artifacts: 'zap-report.html', allowEmptyArchive: true
+      }
+    }
+
+    stage('Secrets scan: Gitleaks') {
+      steps {
+        sh '''
+          gitleaks detect --source . --report-path gitleaks-report.json || true
+        '''
+        archiveArtifacts artifacts: 'gitleaks-report.json', allowEmptyArchive: true
+      }
+    }
+
+    stage('SonarQube') {
+      steps {
+        withCredentials([string(credentialsId: 'sonar-token', variable: 'SONAR_TOKEN')]) {
+          sh 'sonar-scanner -Dsonar.login=$SONAR_TOKEN'
+        }
+      }
+    }
+  }
+
+  post {
+    always {
+      archiveArtifacts artifacts: '**/*.json, **/*.html', allowEmptyArchive: true
+      publishHTML(target: [
+        reportDir: '.',
+        reportFiles: 'zap-report.html',
+        reportName: 'ZAP Report',
+        allowMissing: true
+      ])
+    }
+
+    failure {
+      mail to: 'you@example.com',
+           subject: "Pipeline failed: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+           body: "See Jenkins for details"
+    }
+  }
 }
