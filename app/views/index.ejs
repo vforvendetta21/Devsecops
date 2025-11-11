@@ -1,0 +1,19 @@
+<!doctype html>
+<html>
+  <head><meta charset="utf-8"><title>Vuln App</title></head>
+  <body>
+    <h1>Vuln App Demo</h1>
+    <p>App secret (from env): <strong><%= secret %></strong></p>
+    <form action="/search" method="get">
+      <input name="q" placeholder="search...">
+      <button>Search</button>
+    </form>
+
+    <h2>Login</h2>
+    <form action="/login" method="post">
+      <input name="username" placeholder="username">
+      <input name="password" type="password" placeholder="password">
+      <button>Login</button>
+    </form>
+  </body>
+</html>

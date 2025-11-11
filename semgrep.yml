@@ -1,0 +1,9 @@
+rules:
+  - id: insecure-sql-concat
+    pattern: "SELECT * FROM users WHERE username = $X AND password = $Y"
+    message: "Possible SQL concatenation. Use parameterized queries."
+    severity: ERROR
+  - id: reflected-xss
+    pattern: "<h1>Search results for: $X</h1>"
+    message: "Reflected XSS: render user input safely."
+    severity: WARNING

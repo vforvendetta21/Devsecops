@@ -1,0 +1,6 @@
+title = "Gitleaks config"
+
+[[rules]]
+description = "Demo AWS key"
+regex = '''AKIA[0-9A-Z]{16}'''
+tags = ["key", "aws"]
