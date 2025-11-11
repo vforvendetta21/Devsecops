@@ -6,13 +6,6 @@ pipeline {
     }
 
     stages {
-        stage('Checkout') {
-            steps {
-                // Récupère le code depuis GitHub
-                git branch: 'main', url: 'https://github.com/myusername/Devsecops.git'
-            }
-        }
-
         stage('Install Dependencies') {
             steps {
                 // Installe les dépendances npm
