@@ -20,3 +20,4 @@ Application pédagogique vulnérable (Node.js / Express) utilisée pour un proje
 ## Notes
 - Ne pas committer `.env`. Voir `.env.example`.
 - App vulnérable volontairement pour démonstration : ne pas déployer en production.
+"// test Jenkins pipeline" 
