@@ -75,7 +75,7 @@ pipeline {
       steps {
         sh '''
           # Run Gitleaks using embedded default rules
-          gitleaks detect --source . --report-path gitleaks-report.json --config "" || true
+          gitleaks detect --source . --report-path gitleaks-report.json || true
 
           # Make reports folder and copy
           mkdir -p reports
