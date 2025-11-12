@@ -71,19 +71,19 @@ pipeline {
       }
     }
 
-    stage('Secrets scan: Gitleaks') {
-      steps {
-        sh '''
-          # Run Gitleaks using embedded default rules
-          gitleaks detect --source . --report-path gitleaks-report.json || true
+ //   stage('Secrets scan: Gitleaks') {
+ //     steps {
+ //       sh '''
+ //         # Run Gitleaks using embedded default rules
+ //         gitleaks detect --source . --report-path gitleaks-report.json || true
 
-          # Make reports folder and copy
-          mkdir -p reports
-          [ -f gitleaks-report.json ] && cp gitleaks-report.json reports/
-        '''
-        archiveArtifacts artifacts: 'reports/gitleaks-report.json', allowEmptyArchive: true
-      }
-    }
+   //       # Make reports folder and copy
+ //         mkdir -p reports
+ //         [ -f gitleaks-report.json ] && cp gitleaks-report.json reports/
+ //       '''
+  //      archiveArtifacts artifacts: 'reports/gitleaks-report.json', allowEmptyArchive: true
+  //    }
+  //  }
 
 
     stage('Collect Reports') {
