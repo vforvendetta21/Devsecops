@@ -73,11 +73,23 @@ pipeline {
  //       }
  //     }
 //    }
+    stage('Collect Reports') {
+      steps {
+        sh '''
+          mkdir -p reports
+          cp app/semgrep-report.json reports/
+          cp zap-report.html reports/
+          cp trivy-image.json reports/
+          cp gitleaks-report.json reports/
+        '''
+        archiveArtifacts artifacts: 'reports/*', allowEmptyArchive: true
+      }
+    }
   }
+  
 
   post {
   always {
-    archiveArtifacts artifacts: '**/zap-report.html, **/semgrep-report.json, **/trivy-image.json, **/gitleaks-report.json', allowEmptyArchive: true
     publishHTML(target: [
       reportDir: '.',
       reportFiles: 'zap-report.html',
@@ -112,7 +124,7 @@ pipeline {
       </html>
       """,
       mimeType: 'text/html',
-      attachmentsPattern: '**/zap-report.html, **/semgrep-report.json, **/trivy-image.json, **/gitleaks-report.json'
+      attachmentsPattern: 'reports/*'
     )
   }
 
@@ -132,7 +144,7 @@ pipeline {
       </html>
       """,
       mimeType: 'text/html',
-      attachmentsPattern: '**/zap-report.html, **/semgrep-report.json, **/trivy-image.json, **/gitleaks-report.json'
+      attachmentsPattern: 'reports/*'
     )
   }
 }
