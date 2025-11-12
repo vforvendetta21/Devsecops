@@ -83,7 +83,7 @@ pipeline {
 
   success {
     echo "✅ Build succeeded, sending full report email..."
-    mail to: 'your_email@gmail.com',
+    mail to: 'benhajbrahimm@gmail.com',
          subject: "✅ Jenkins Build Success: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
          body: """\
 Hello,
@@ -106,7 +106,7 @@ ${env.BUILD_URL}
 
   failure {
     echo "❌ Build failed, sending failure report email..."
-    mail to: 'your_email@gmail.com',
+    mail to: 'benhajbrahimm@gmail.com',
          subject: "❌ Jenkins Build Failed: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
          body: """\
 Hello,
