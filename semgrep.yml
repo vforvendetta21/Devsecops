@@ -3,7 +3,23 @@ rules:
     pattern: "SELECT * FROM users WHERE username = $X AND password = $Y"
     message: "Possible SQL concatenation. Use parameterized queries."
     severity: ERROR
+
   - id: reflected-xss
     pattern: "<h1>Search results for: $X</h1>"
     message: "Reflected XSS: render user input safely."
     severity: WARNING
+    
+  - id: hardcoded-secret
+    pattern: "API_KEY = \"$X\""
+    message: "Hardcoded secrets detected."
+    severity: ERROR
+
+  - id: insecure-random
+    pattern: "Math.random()"
+    message: "Insecure random number generation, use crypto API."
+    severity: WARNING
+
+  - id: eval-usage
+    pattern: "eval($X)"
+    message: "Avoid using eval() as it can lead to code injection."
+    severity: ERROR
