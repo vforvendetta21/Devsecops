@@ -74,10 +74,14 @@ pipeline {
     stage('Secrets scan: Gitleaks') {
       steps {
         sh '''
+              # Make sure gitleaks is installed and in PATH
           gitleaks detect --source . --report-path gitleaks-report.json || true
+
+          # Make reports folder and copy report
           mkdir -p reports
           [ -f gitleaks-report.json ] && cp gitleaks-report.json reports/
         '''
+        archiveArtifacts artifacts: 'reports/gitleaks-report.json', allowEmptyArchive: true
       }
     }
 
