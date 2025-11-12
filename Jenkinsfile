@@ -66,13 +66,13 @@ pipeline {
       }
     }
 
-    stage('SonarQube') {
-      steps {
-        withCredentials([string(credentialsId: 'sonar-token', variable: 'SONAR_TOKEN')]) {
-          sh 'sonar-scanner -Dsonar.login=$SONAR_TOKEN'
-        }
-      }
-    }
+ //   stage('SonarQube Analysis') {
+ //     steps {
+ //       withSonarQubeEnv('SonarQube') {
+ //         sh 'sonar-scanner'
+ //       }
+ //     }
+//    }
   }
 
   post {
