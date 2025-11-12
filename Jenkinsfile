@@ -75,9 +75,9 @@ pipeline {
 //    }
   }
 
-    post {
+      post {
     always {
-      archiveArtifacts artifacts: '**/*.json, **/*.html', allowEmptyArchive: true
+      archiveArtifacts artifacts: '**/zap-report.html, **/semgrep-report.json, **/trivy-image.json, **/gitleaks-report.json', allowEmptyArchive: true
       publishHTML(target: [
         reportDir: '.',
         reportFiles: 'zap-report.html',
@@ -86,25 +86,34 @@ pipeline {
       ])
     }
 
-    failure {
-      emailext(
-        to: 'benhajbrahimm@gmail.com',
-        subject: "❌ Pipeline failed: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
-        body: """<p>The build failed. Check Jenkins for details.</p>""",
-        attachmentsPattern: '**/*.json, **/*.html',
-        mimeType: 'text/html'
-      )
+    success {
+      mail to: 'benhajbrahimm@gmail.com',
+          subject: "✅ Build Success: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+          body: """Hello,
+
+  Your DevSecOps pipeline has completed successfully.
+
+  Attached are the main security reports:
+  - 🧠 SAST (Semgrep)
+  - 🧩 SCA (Trivy)
+  - 🕷️ DAST (OWASP ZAP)
+  - 🔐 Secrets (Gitleaks)
+
+  You can view the full results in Jenkins:
+  ${env.BUILD_URL}
+
+  Regards,
+  Jenkins Security Pipeline
+  """,
+          attachmentsPattern: '**/zap-report.html, **/semgrep-report.json, **/trivy-image.json, **/gitleaks-report.json'
     }
 
-    success {
-      emailext(
-        to: 'benhajbrahimm@gmail.com',
-        subject: "✅ Pipeline succeeded: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
-        body: """<p>The build completed successfully! Attached reports below.</p>""",
-        attachmentsPattern: '**/*.json, **/*.html',
-        mimeType: 'text/html'
-      )
+    failure {
+      mail to: 'benhajbrahimm@gmail.com',
+          subject: "❌ Pipeline failed: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+          body: """The pipeline has failed. Please check Jenkins for details:
+  ${env.BUILD_URL}
+  """
     }
   }
-
 }
