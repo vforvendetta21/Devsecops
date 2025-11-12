@@ -75,50 +75,36 @@ pipeline {
 //    }
   }
 
-  post {
-  always {
-    echo "📦 Archiving all reports..."
-    archiveArtifacts artifacts: '**/*.json, **/*.html', allowEmptyArchive: true
+    post {
+    always {
+      archiveArtifacts artifacts: '**/*.json, **/*.html', allowEmptyArchive: true
+      publishHTML(target: [
+        reportDir: '.',
+        reportFiles: 'zap-report.html',
+        reportName: 'ZAP Report',
+        allowMissing: true
+      ])
+    }
+
+    failure {
+      emailext(
+        to: 'benhajbrahimm@gmail.com',
+        subject: "❌ Pipeline failed: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+        body: """<p>The build failed. Check Jenkins for details.</p>""",
+        attachmentsPattern: '**/*.json, **/*.html',
+        mimeType: 'text/html'
+      )
+    }
+
+    success {
+      emailext(
+        to: 'benhajbrahimm@gmail.com',
+        subject: "✅ Pipeline succeeded: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+        body: """<p>The build completed successfully! Attached reports below.</p>""",
+        attachmentsPattern: '**/*.json, **/*.html',
+        mimeType: 'text/html'
+      )
+    }
   }
 
-  success {
-    echo "✅ Build succeeded, sending full report email..."
-    mail to: 'benhajbrahimm@gmail.com',
-         subject: "✅ Jenkins Build Success: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
-         body: """\
-Hello,
-
-The Jenkins pipeline *${env.JOB_NAME}* (build #${env.BUILD_NUMBER}) completed successfully.
-
-📊 Reports generated:
-- SAST (Semgrep / ESLint)
-- SCA (npm audit / Trivy)
-- DAST (OWASP ZAP)
-- Secrets (Gitleaks)
-
-You can review the detailed reports attached or directly from Jenkins:
-${env.BUILD_URL}
-
--- Jenkins CI/CD
-""",
-         attachmentsPattern: '**/*.json, **/*.html'
-  }
-
-  failure {
-    echo "❌ Build failed, sending failure report email..."
-    mail to: 'benhajbrahimm@gmail.com',
-         subject: "❌ Jenkins Build Failed: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
-         body: """\
-Hello,
-
-The Jenkins pipeline *${env.JOB_NAME}* (build #${env.BUILD_NUMBER}) has failed.
-
-Please review the attached reports and logs for more information:
-${env.BUILD_URL}
-
--- Jenkins CI/CD
-""",
-         attachmentsPattern: '**/*.json, **/*.html'
-  }
-}
 }
