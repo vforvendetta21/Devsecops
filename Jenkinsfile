@@ -55,9 +55,16 @@ pipeline {
     stage('DAST: OWASP ZAP baseline') {
       steps {
         sh '''
+              # Start your application container
           docker run -d --name vuln-app-test -p 3000:3000 ${IMAGE}
-          docker run --rm --network host owasp/zap2docker-stable zap-baseline.py -t http://host.docker.internal:3000 -r zap-report.html || true
+
+          # Run OWASP ZAP scan using the pulled stable image
+          docker run --rm --network host zaproxy/zap-stable zap-baseline.py -t http://host.docker.internal:3000 -r zap-report.html || true
+
+          # Stop and remove the application container
           docker rm -f vuln-app-test || true
+
+          # Make reports folder and copy ZAP report
           mkdir -p reports
           [ -f zap-report.html ] && cp zap-report.html reports/
         '''
