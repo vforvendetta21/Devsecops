@@ -1,25 +1,70 @@
 rules:
   - id: insecure-sql-concat
-    pattern: "SELECT * FROM users WHERE username = $X AND password = $Y"
-    message: "Possible SQL concatenation. Use parameterized queries."
+    languages: [javascript]
+    message: >
+      Possible SQL injection: building SQL by concatenating user-controlled values
+      or using template literals. Use parameterized queries / prepared statements
+      (e.g., use `db.get(sql, [params], cb)` or a proper ORM).
     severity: ERROR
+    patterns:
+      - pattern-either:
+          # template literal containing variables (backticks + ${})
+          - pattern: "$SQL = `SELECT * FROM $TABLE WHERE $COND`"
+          # simple template literal with ${...} anywhere
+          - pattern: "`$X${$Y}$Z`"
+          # concatenation using + that builds SQL-like strings
+          - pattern: "$SQL = 'SELECT' + $REST"
+          - pattern: "$SQL = \"SELECT\" + $REST"
+          - pattern: "$SQL = $A + $B"
+      # try to focus on occurrences that include SELECT/WHERE to reduce noise
+      - pattern-regex: "(?i)SELECT\\s+\\*\\s+FROM\\s+\\w+.*WHERE"
 
-  - id: reflected-xss
-    pattern: "<h1>Search results for: $X</h1>"
-    message: "Reflected XSS: render user input safely."
+  - id: reflected-xss-express-send
+    languages: [javascript]
+    message: >
+      Possible reflected XSS: user-controlled data written directly into HTML
+      returned by `res.send()` or template strings. Escape or sanitize output.
     severity: WARNING
-    
-  - id: hardcoded-secret
-    pattern: "API_KEY = \"$X\""
-    message: "Hardcoded secrets detected."
+    patterns:
+      - pattern-either:
+          - pattern: "res.send(`<h1>$MSG: ${$TAINT}</h1>`)"
+          - pattern: "res.send('<h1>' + $TAINT + '</h1>')"
+          - pattern: "res.send($HTML + $TAINT)"
+          - pattern: "res.send($TEMPLATE)"
+      - pattern-regex: "(?i)res\\.send\\(.*\\$?[a-zA-Z0-9_]+.*\\)"
+
+  - id: insecure-hardcoded-or-default-secret
+    languages: [javascript]
+    message: >
+      Insecure secret: app uses a hardcoded default secret or falls back to a literal.
+      Do not hardcode secrets; require a secure env var or use a secrets manager.
     severity: ERROR
+    patterns:
+      - pattern-either:
+          - pattern: "const APP_SECRET = process.env.$ENV || \"$SECRET\""
+          - pattern: "const $NAME = \"$SECRET\""
+          - pattern: "const $NAME = '$SECRET'"
+      - pattern-regex: "(?i)(APP_SECRET|SECRET|TOKEN|API_KEY)\\s*=\\s*['\"]\\w{3,}['\"]"
 
-  - id: insecure-random
-    pattern: "Math.random()"
-    message: "Insecure random number generation, use crypto API."
-    severity: WARNING
-
-  - id: eval-usage
+  - id: eval-usage-js
+    languages: [javascript]
+    message: "Avoid using eval() — it can execute attacker-controlled code."
+    severity: ERROR
     pattern: "eval($X)"
-    message: "Avoid using eval() as it can lead to code injection."
-    severity: ERROR
+
+  - id: inner-html-assignment-js
+    languages: [javascript]
+    message: "Avoid assigning untrusted data to .innerHTML to prevent XSS."
+    severity: WARNING
+    pattern-either:
+      - pattern: "$EL.innerHTML = $DATA"
+      - pattern: "$EL['innerHTML'] = $DATA"
+
+  - id: insecure-sqlite-in-memory-dev
+    languages: [javascript]
+    message: >
+      Use of in-memory SQLite DB is fine for demos/tests but not for production.
+      Make sure this is intentional.
+    severity: INFO
+    pattern: "new sqlite3.Database(':memory:')"
+
