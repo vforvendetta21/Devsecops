@@ -5,10 +5,13 @@ export default [
     languageOptions: {
       ecmaVersion: 12,
       sourceType: 'module',
-      env: {
-        browser: true,
-        node: true,
-        es2021: true,
+      globals: {
+        window: 'readonly',
+        document: 'readonly',
+        process: 'readonly',
+        console: 'readonly',
+        module: 'readonly',
+        require: 'readonly',
       },
     },
     rules: {
@@ -16,7 +19,6 @@ export default [
       'no-console': 'warn',
       'eqeqeq': 'error',
       'no-unused-vars': 'warn',
-      // There is no built-in 'no-inner-html', use 'no-inner-html' as a custom rule if needed
     },
   },
 ];
