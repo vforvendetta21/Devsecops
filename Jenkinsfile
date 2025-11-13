@@ -24,7 +24,7 @@ pipeline {
           sonar-scanner \
             -Dsonar.projectKey=VulnApp \
             -Dsonar.sources=. \
-            -Dsonar.host.url=http://192.168.43.39/:9000 \
+            -Dsonar.host.url=http://192.168.43.39:9000 \
             -Dsonar.login=$SONAR_TOKEN \
             -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info || true
           '''
