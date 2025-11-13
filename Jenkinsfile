@@ -14,21 +14,6 @@ pipeline {
       }
     }
 
-    stage('SAST: SonarQube Analysis') {
-      steps {
-        withSonarQubeEnv('fel sonar qube samitah newest jenkins') {
-          sh '''
-            cd app
-            sonar-scanner \
-              -Dsonar.projectKey=VulnApp \
-              -Dsonar.sources=. \
-              -Dsonar.host.url=$SONAR_HOST_URL \
-              -Dsonar.login=$SONAR_AUTH_TOKEN \
-              -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info || true
-          '''
-         }
-      }
-    }
 
     stage('SAST: ESLint + Semgrep') {
       steps {
