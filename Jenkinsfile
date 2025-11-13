@@ -118,10 +118,8 @@ pipeline {
             <p>Hello,</p>
             <p>The following security checks have been completed successfully:</p>
             <ul>
-              <li><b>🧠 SAST:</b> Semgrep</li>
+              <li><b>🧠 SAST:</b> Semgrep & eslint</li>
               <li><b>🧩 SCA:</b> Trivy & npm audit</li>
-              <li><b>🕷️ DAST:</b> OWASP ZAP</li>
-              <li><b>🔐 Secrets Scan:</b> Gitleaks</li>
             </ul>
             <p>Attached are the main reports. You can also view the full build details here:</p>
             <p><a href="${env.BUILD_URL}" target="_blank">${env.BUILD_URL}</a></p>
