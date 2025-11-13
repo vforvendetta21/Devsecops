@@ -16,17 +16,15 @@ pipeline {
 
     stage('SAST: ESLint + Semgrep') {
       steps {
-          sh '''
+        sh '''
           cd app
-
-          # ESLint HTML report
-          npx eslint . -f html -o ../reports/eslint-report.html || true
-
-          # --- Semgrep JSON report ---
-          semgrep --config ../semgrep.yml --json --output ../reports/semgrep-report.json || true
-
+          npx eslint . || true
+          semgrep --config ../semgrep.yml --json --output semgrep-report.json || true
           mkdir -p ../reports
-          '''
+          if [ -f semgrep-report.json ]; then
+            cp semgrep-report.json ../reports/
+          fi
+        '''
       }
     }
 
@@ -101,15 +99,17 @@ pipeline {
 
   post {
     always {
-      
+      publishHTML(target: [
+        reportDir: '.',
+        reportFiles: 'zap-report.html',
+        reportName: 'ZAP Report',
+        allowMissing: true
+      ])
     }
-
     success {
       emailext(
         to: 'benhajbrahimm@gmail.com',
         subject: "✅ Build Success: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
-        mimeType: 'text/html',
-        attachmentsPattern: 'reports/**/*', // attach all reports under reports folder
         body: """
         <html>
           <body style="font-family:Arial, sans-serif;">
@@ -127,7 +127,9 @@ pipeline {
             <p>Best regards,<br><b>Jenkins DevSecOps Pipeline</b></p>
           </body>
         </html>
-        """
+        """,
+        mimeType: 'text/html',
+        attachmentsPattern: 'reports/*'
       )
     }
 
@@ -135,8 +137,6 @@ pipeline {
       emailext(
         to: 'benhajbrahimm@gmail.com',
         subject: "❌ Pipeline Failed: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
-        mimeType: 'text/html',
-        attachmentsPattern: 'reports/**/*', // attach all reports
         body: """
         <html>
           <body style="font-family:Arial, sans-serif;">
@@ -147,7 +147,9 @@ pipeline {
             <p>Regards,<br><b>Jenkins DevSecOps Pipeline</b></p>
           </body>
         </html>
-        """
+        """,
+        mimeType: 'text/html',
+        attachmentsPattern: 'reports/*'
       )
     }
   }
