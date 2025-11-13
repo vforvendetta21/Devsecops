@@ -16,17 +16,24 @@ pipeline {
 
     stage('SAST: ESLint + Semgrep') {
       steps {
-        sh '''
+          sh '''
           cd app
-          npx eslint . || true
+
+          # ESLint HTML report
+          npx eslint . -f html -o ../reports/eslint-report.html || true
+
+          # Semgrep JSON report
           semgrep --config ../semgrep.yml --json --output semgrep-report.json || true
+
+          # Optional: convert JSON → HTML
+          pip install semgrep-html
+          semgrep-html -i semgrep-report.json -o ../reports/semgrep-report.html || true
+
           mkdir -p ../reports
-          if [ -f semgrep-report.json ]; then
-            cp semgrep-report.json ../reports/
-          fi
-        '''
+          '''
       }
     }
+
 
     stage('SCA: npm audit & Trivy (dependencies)') {
       steps {
@@ -54,23 +61,25 @@ pipeline {
 
     stage('DAST: OWASP ZAP baseline') {
       steps {
-       sh '''
-          # Start your application container
+        sh '''
+          # 🧹 Always clean up any leftover container before running a new one
+          docker rm -f vuln-app-test || true
+
+          # 🚀 Start your application container
           docker run -d --name vuln-app-test -p 3000:3000 ${IMAGE}
 
-          # Make a folder on the host to store ZAP reports
+          # 📁 Make a folder on the host to store ZAP reports
           mkdir -p reports/zap
 
-          # Run OWASP ZAP scan with volume mounted
+          # 🕷️ Run OWASP ZAP scan
           docker run --rm --network host -v $PWD/reports/zap:/zap/wrk zaproxy/zap-stable \
             zap-baseline.py -t http://host.docker.internal:3000 -r /zap/wrk/zap-report.html || true
 
-          # Stop and remove the application container
+          # 🧹 Stop and remove the application container (cleanup)
           docker rm -f vuln-app-test || true
         '''
       }
     }
-
  //   stage('Secrets scan: Gitleaks') {
  //     steps {
  //       sh '''
