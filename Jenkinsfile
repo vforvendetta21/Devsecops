@@ -14,6 +14,23 @@ pipeline {
       }
     }
 
+    stage('SAST: SonarQube Analysis') {
+      environment {
+          SONAR_TOKEN = credentials('sqa_82cc72f7dad8f8247204416bc2319dbe70e76dce')
+      }
+      steps {
+          sh '''
+          cd app
+          sonar-scanner \
+            -Dsonar.projectKey=VulnApp \
+            -Dsonar.sources=. \
+            -Dsonar.host.url=http://192.168.43.39/:9000 \
+            -Dsonar.login=$SONAR_TOKEN \
+            -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info || true
+          '''
+       }
+    }
+
     stage('SAST: ESLint + Semgrep') {
       steps {
         sh '''
